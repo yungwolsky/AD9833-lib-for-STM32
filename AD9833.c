@@ -2,8 +2,6 @@
 
 uint16_t low_frq_bits = 0;
 uint16_t high_frq_bits = 0;
-uint16_t phase = 0;
-uint16_t curr_wave = 0;
 uint32_t curr_phase = 0;
 
 extern SPI_HandleTypeDef hspi1;
@@ -11,7 +9,9 @@ extern SPI_HandleTypeDef hspi1;
 void AD9833_WriteRegister(uint16_t word)
 {
     HAL_GPIO_WritePin(AD9833_PORT, AD9833_FSYNC, GPIO_PIN_RESET);
+	__NOP(); __NOP(); // Slight delay
     HAL_SPI_Transmit(&hspi1, (uint8_t*)&word, 1, HAL_MAX_DELAY);
+	__NOP(); __NOP();
     HAL_GPIO_WritePin(AD9833_PORT, AD9833_FSYNC, GPIO_PIN_SET);
 }
 
@@ -21,15 +21,12 @@ void AD9833_SetWave(uint16_t wave_type)
 	{
 	case 0:
 		AD9833_WriteRegister(0x2000); // Sine wave
-		curr_wave = 0;
 		break;
 	case 1:
 		AD9833_WriteRegister(0x2002); // Triangle wave
-		curr_wave = 1;
 		break;
 	case 2:
-		AD9833_WriteRegister(0x2028);
-		curr_wave = 2;
+		AD9833_WriteRegister(0x2028); // Square wave
 		break;
 	}
 }
@@ -60,9 +57,9 @@ void AD9833_SetWaveParams(float frequency, float phase)
 	AD9833_SetWave(curr_wave);
 }
 
-void AD9833_Init(uint16_t wave_type, float frequency, float phase)
+void AD9833_Init(enum wave_type wave, float frequency, float phase)
 {
 	HAL_GPIO_WritePin(AD9833_PORT, AD9833_FSYNC, GPIO_PIN_SET);
 	AD9833_SetWaveParams(frequency, phase);
-	AD9833_SetWave(wave_type);
+	AD9833_SetWave(wave);
 }
